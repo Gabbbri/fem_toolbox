@@ -1,11 +1,12 @@
 # 📦 fem_toolbox documentation
 
-**Finite Element Toolbox for 1D and 2D Frame Structures - Static and Modal Analysis**
+**Finite Element Toolbox for 1D and 2D Frame Structures - Static and Modal Analysis - Optimization**
 
 ---
 
 **Version:** 0.1  \
-**Author:** Girardi Gabriele 
+**Author:** Girardi Gabriele \
+**Github**: [fem_toolbox](http://github.com/Gabbbri/fem_toolbox)
 
 ---
 
@@ -14,7 +15,7 @@
 - [Introduction](#introduction)
 - [Installation](#installation)
 - [Package organization and tutorials](#package-organization-and-tutorials)
-- [Library overview](#functions-index)
+- [Library overview - Functions index](#functions-index)
 - [Module 1: geometry](#module-1-geometrypy-input-parser)
 - [Module 2: mesh](#module-2-meshpy-discretization-and-visualization)
 - [Module 3: elements](#module-3-elementspy-element-stiffness-mass-matrices-and-transformations)
@@ -125,7 +126,7 @@ Before diving into the documentation, I recommend to have a look at the subdirec
 
 ---
 
-## Library overview
+## Functions index
 
 - Module 1: geometry.py
     - [read_structure('file_path')](#function-read_structurefile_path): reads geometry from file
@@ -159,7 +160,7 @@ Before diving into the documentation, I recommend to have a look at the subdirec
     - [modal_analysis(...)](#function-modal_analysisk_global-m_global-bc_nodes-bc_dofs-ndof_per_node-num_modes5): solves the eigenvalue problem K * u = lambda * M *u for a specified number of natural frequencies
 
 - Module 6: postprocessing.py
-    -[eval_stress(...)](#function-eval_stressk_local_func-r_func-u-fem_elements-fem_nodes-element_sections-material-section_shape): computes internal actions and stresses (axial, bending, shear, von Mises) in each element.
+    - [eval_stress(...)](#function-eval_stressk_local_func-r_func-u-fem_elements-fem_nodes-element_sections-material-section_shape): computes internal actions and stresses (axial, bending, shear, von Mises) in each element.
     - [compute_reaction_forces(...)](#function-compute_reaction_forcesk_global-u-bc_nodes-bc_dofs): computes the reaction forces at constrained DOFs.
     - [plot_internal_actions_2D(...)](#function-plot_internal_actions_2dbeam_connectivity-fem_nodes-fem_elements-internal_actions-elements_per_beam5): plots internal action diagrams (Axial, Shear and Moment) for each beam of the structure.
     - [plot_internal_actions_1D(...)](#function-plot_internal_actions_1dfem_nodes-fem_elements-internal_actions-dof_per_node): plots internal action diagrams (Axial, Shear and Moment) for 1D horizontal geometries.
@@ -168,7 +169,20 @@ Before diving into the documentation, I recommend to have a look at the subdirec
     - [animate_mode_shape_2D(...)](#function-animate_mode_shape_2dmode_index-eigenvecs-node_coords-free_dofs-k-elements-ndof_per_node-amplification100-save_asnone): animates a specified mode shape for a 2D frame.
     - [animate_mode_shape_1D(...)](#function-animate_mode_shape_1dmode_index-eigenvecs-node_coords-free_dofs-k-elements-ndof_per_node-amplification100-save_asnone): animate a specified mode shape for 1D bar or beam element.
 
+- Module 7: optimizer.py
+    - [optimize_crossSections4stresses_trusses](#function-optimize_crosssections4stress_trusseselement_crosssections-sigma_max-fem_nodes-fem_elements-mat_properties-ndof_per_node-bc_nodes-bc_dofs-bc_values-f_nodes-f_dofs-f_values-assemblek-assemblef-k_local_func-rotation_func-a_min10-a_max1e5-section_shaperectangle): perform weight minimization on the structure, using element areas as design variables and stresses as constraints.
 
+    - [checkOptimization_stresses_trusses](#function-checkoptimization_frequencies_trusseselement_crosssections-optimized_area_values-forbidden_frequency_band-fem_nodes-fem_elements-mat_properties-ndof_per_node-bc_nodes-bc_dofs-assemblek-assemblem-k_local_func-m_local_func-rotation_funcnone-num_modes5-verbosetrue): compute and compare the axial stresses in the structure before and after optimization.
+
+    - [optimize_crossSections4frequency_trusses](#function-optimize_crosssections4frequency_trusseselement_crosssections-forbidden_range-fem_nodes-fem_elements-mat_properties-ndof_per_node-bc_nodes-bc_dofs-bc_values-assemblek-assemblem-num_modes-k_local_func-m_local_func-rotation_funcnone-a_min50-a_max3000-margin05-uniformity_penalty_weight1e-1-smoothness_penalty_weight03e-1-boundary_penalty_weight100-initial_perturbation02): perform weight minimization on the structure, usign element areas as design variables and a forbidden frequency band as constraint.
+
+    - [optimizeFrequency_random_hyperparameter_search](#function-optimizefrequency_random_hyperparameter_searchmax_trials-element_crosssections-forbidden_range-fem_nodes-fem_elements-mat_properties-ndof_per_node-bc_nodes-bc_dofs-bc_values-assemblek-assemblem-num_modes-k_local_func-m_local_func-a_min-a_max-rotation_func): wrapper around the optimization functions. Iterates until valid results are found.
+
+    - [checkOptimization_frequencies_trusses](#function-checkoptimization_frequencies_trusseselement_crosssections-optimized_area_values-forbidden_frequency_band-fem_nodes-fem_elements-mat_properties-ndof_per_node-bc_nodes-bc_dofs-assemblek-assemblem-k_local_func-m_local_func-rotation_funcnone-num_modes5-verbosetrue): compares modal frequencies before and after optimization.
+
+    - [optim_plot_1D_beam_geometry](#function-optim_plot_1d_beam_geometryfem_nodes-fem_elements-areas-section_shaperectangle-colorskyblue-padding_factor12-min_thickness1e-2-figsize10-6-show_labelstrue): plots a visual representation of 1D beam geometry based on cross sectional areas.
+
+    - [optim_plot_truss_geometry](#function-optim_plot_truss_geometryfem_nodes-fem_elements-areas-optimstress-section_shaperectangle-colorsteelblue-min_thickness05-scale_factor10-show_labelstrue-figsize10-8-padding_factor11): plots truss geometries with element thickness scaled by cross-sectional areas.
 
 
 ---
@@ -1066,4 +1080,434 @@ Animates a mode shape for 1D structures (bars or beams), with optional saving an
 
  
 
+
+## Module 7: optimizer.py (weight minimization based on stress or frequency constraints)
+
+---
+### Function: `optimize_crossSections4stress_trusses(element_crossSections, sigma_max, fem_nodes, fem_elements, mat_properties, ndof_per_node, bc_nodes, bc_dofs, bc_values, f_nodes, f_dofs, f_values, assembleK, assembleF, k_local_func, rotation_func, A_min=10, A_max=1e5, section_shape="rectangle")`
+
+Optimizes the cross-sectional areas of truss elements to minimize weight (volume), subject to a maximum allowable stress.
+
+**Function parameters:**
+
+    element_crossSections (list of dict):
+        List where each dictionary describes the cross-section of an element. Must contain at least the key 'A' (area). 'I' (second moment of inertia) is also expected.
+
+    sigma_max (float):
+        Maximum allowable absolute stress (e.g., yield strength).
+
+    fem_nodes (np.ndarray):
+        (N, 2) array of node coordinates.
+
+    fem_elements (np.ndarray):
+        (E, 2) array of element connectivity.
+
+    mat_properties (dict):
+        Dictionary of material properties (e.g., 'E' for Young's modulus).
+
+    ndof_per_node (int):
+        Number of degrees of freedom per node (e.g., 1 or 2 for 2D trusses).
+
+    bc_nodes (np.ndarray):
+        Array of node indices with boundary conditions.
+
+    bc_dofs (np.ndarray):
+        Array of corresponding degrees of freedom for the boundary conditions.
+
+    bc_values (np.ndarray):
+        Array of prescribed displacement values for the boundary conditions.
+
+    f_nodes (np.ndarray):
+        Array of node indices with applied forces.
+
+    f_dofs (np.ndarray):
+        Array of corresponding degrees of freedom for the applied forces.
+
+    f_values (np.ndarray):
+        Array of applied force values.
+
+    assembleK (callable):
+        Function to assemble the global stiffness matrix.
+
+    assembleF (callable):
+        Function to assemble the global force vector.
+
+    k_local_func (callable):
+        Function to compute the local stiffness matrix of an element.
+
+    rotation_func (callable, optional):
+        Function to compute the rotation matrix for an element (None for 1D).
+
+    A_min (float, optional):
+        Minimum allowable cross-sectional area (default = 10 $mm^2$).
+
+    A_max (float, optional):
+        Maximum allowable cross-sectional area (default = 1e5 $mm^2$).
+
+    section_shape (str, optional):
+        Shape of the cross-section ('rectangle' is currently assumed for stress evaluation).
+
+**Returns:**
+    np.ndarray: Optimized cross-sectional areas for each element.
+
+---
+
+### Function: `checkOptimization_stresses_trusses(element_crossSections, optimized_areas, max_stress, fem_nodes, fem_elements, mat_properties, ndof_per_node, bc_nodes, bc_dofs, bc_values, f_ext, f_nodes, f_dofs, assembleK, assembleF, k_local_func, rotation_func, section_shape="rectangle", verbose=True)`
+
+Compute and compare the axial stresses in the truss structure before and after the cross-section optimization.
+
+**Function parameters:**
+
+    element_crossSections (list of dict):
+        List where each dictionary describes the original cross-section of an element. Must contain keys 'A' (area) and 'I' (second moment of inertia).
+
+    optimized_areas (np.ndarray):
+        Array of optimized cross-sectional areas for each element.
+
+    max_stress (float):
+        Maximum allowable axial stress used during the optimization.
+
+    fem_nodes (np.ndarray):
+        (N, 2) array of node coordinates.
+
+    fem_elements (np.ndarray):
+        (E, 2) array of element connectivity.
+
+    mat_properties (dict):
+        Dictionary of material properties (e.g., 'E' for Young's modulus).
+
+    ndof_per_node (int):
+        Number of degrees of freedom per node.
+
+    bc_nodes (np.ndarray):
+        Array of node indices with boundary conditions.
+
+    bc_dofs (np.ndarray):
+        Array of corresponding degrees of freedom for the boundary conditions.
+
+    bc_values (np.ndarray):
+        Array of prescribed displacement values for the boundary conditions.
+
+    f_ext (np.ndarray):
+        Global force vector (it seems this might be redundant with f_nodes, f_dofs, f_values).
+
+    f_nodes (np.ndarray):
+        Array of node indices with applied forces.
+
+    f_dofs (np.ndarray):
+        Array of corresponding degrees of freedom for the applied forces.
+
+    assembleK (callable):
+        Function to assemble the global stiffness matrix.
+
+    assembleF (callable):
+        Function to assemble the global force vector.
+
+    k_local_func (callable):
+        Function to compute the local stiffness matrix of an element.
+
+    rotation_func (callable, optional):
+        Function to compute the rotation matrix for an element (None for 1D).
+
+    section_shape (str, optional):
+        Shape of the cross-section ('rectangle' is assumed for stress evaluation).
+
+    verbose (bool, optional):
+        If True, prints a table comparing original and optimized areas and stresses (default = True).
+
+**Returns:**
+
+    None – if `verbose=True`, prints a formatted table to the console.
+
+---
+
+### Function: `optimize_crossSections4frequency_trusses(element_crossSections, forbidden_range, fem_nodes, fem_elements, mat_properties, ndof_per_node, bc_nodes, bc_dofs, bc_values, assembleK, assembleM, num_modes, k_local_func, m_local_func, rotation_func=None, A_min=50, A_max=3000, margin=0.5, uniformity_penalty_weight=1e-1, smoothness_penalty_weight=0.3e-1, boundary_penalty_weight=100, initial_perturbation=0.2)`
+
+Optimizes the cross-sectional areas of truss elements to minimize weight (volume), while ensuring that the first few natural frequencies of the structure avoid a specified forbidden range.
+
+**Function parameters:**
+
+    element_crossSections (list of dict):
+        List where each dictionary describes the initial cross-section of an element. Must contain at least the key 'A' (area) and 'I' (second moment of inertia).
+
+    forbidden_range (tuple):
+        Tuple $(f_{min}, f_{max})$ defining the frequency range to be avoided.
+
+    fem_nodes (np.ndarray):
+        (N, 2) array of node coordinates.
+
+    fem_elements (np.ndarray):
+        (E, 2) array of element connectivity.
+
+    mat_properties (dict):
+        Dictionary of material properties (e.g., 'E' for Young's modulus, 'rho' for density).
+
+    ndof_per_node (int):
+        Number of degrees of freedom per node.
+
+    bc_nodes (np.ndarray):
+        Array of node indices with boundary conditions.
+
+    bc_dofs (np.ndarray):
+        Array of corresponding degrees of freedom for the boundary conditions.
+
+    bc_values (np.ndarray):
+        Array of prescribed displacement values for the boundary conditions.
+
+    assembleK (callable):
+        Function to assemble the global stiffness matrix.
+
+    assembleM (callable):
+        Function to assemble the global mass matrix.
+
+    num_modes (int):
+        Number of lowest natural frequencies to consider in the optimization.
+
+    k_local_func (callable):
+        Function to compute the local stiffness matrix of an element.
+
+    m_local_func (callable):
+        Function to compute the local mass matrix of an element.
+
+    rotation_func (callable, optional):
+        Function to compute the rotation matrix for an element (None for 1D). Defaults to None.
+
+    A_min (float, optional):
+        Minimum allowable cross-sectional area (default = 50).
+
+    A_max (float, optional):
+        Maximum allowable cross-sectional area (default = 3000).
+
+    margin (float, optional):
+        Safety margin added to the forbidden frequency range (default = 0.5).
+
+    uniformity_penalty_weight (float, optional):
+        Weight of the penalty term that encourages uniform cross-sectional areas (default = 0.1). Set to 0 to disable.
+
+    smoothness_penalty_weight (float, optional):
+        Weight of the penalty term that encourages smoothness between adjacent element areas (default = 0.03). Set to 0 to disable.
+
+    boundary_penalty_weight (float, optional):
+        Weight of the penalty for areas close to the minimum bound (default = 100).
+
+    initial_perturbation (float, optional):
+        Fractional perturbation ($\pm$) applied to the initial areas to avoid local minima (default = 0.2, i.e., $\pm 20\%$). Set to 0 to disable.
+
+**Returns:**
+
+    tuple: A tuple containing the optimization result object and the array of optimized cross-sectional areas.
+
+---
+
+### Function: `optimizeFrequency_random_hyperparameter_search(max_trials, element_crossSections, forbidden_range, fem_nodes, fem_elements, mat_properties, ndof_per_node, bc_nodes, bc_dofs, bc_values, assembleK, assembleM, num_modes, k_local_func, m_local_func, A_min, A_max, rotation_func)`
+
+Performs a random hyperparameter search to find suitable penalty weights for the frequency optimization of truss cross-sections. It iteratively calls `optimize_crossSections4frequency_trusses` with randomly sampled penalty weights.
+
+**Function parameters:**
+
+    max_trials (int):
+        Maximum number of random hyperparameter combinations to try.
+
+    element_crossSections (list of dict):
+        List where each dictionary describes the initial cross-section of an element (must contain 'A' and 'I').
+
+    forbidden_range (tuple):
+        Tuple $(f_{min}, f_{max})$ defining the frequency range to be avoided.
+
+    fem_nodes (np.ndarray):
+        (N, 2) array of node coordinates.
+
+    fem_elements (np.ndarray):
+        (E, 2) array of element connectivity.
+
+    mat_properties (dict):
+        Dictionary of material properties (e.g., 'E', 'rho').
+
+    ndof_per_node (int):
+        Number of degrees of freedom per node.
+
+    bc_nodes (np.ndarray):
+        Array of node indices with boundary conditions.
+
+    bc_dofs (np.ndarray):
+        Array of corresponding degrees of freedom for the boundary conditions.
+
+    bc_values (np.ndarray):
+        Array of prescribed displacement values for the boundary conditions.
+
+    assembleK (callable):
+        Function to assemble the global stiffness matrix.
+
+    assembleM (callable):
+        Function to assemble the global mass matrix.
+
+    num_modes (int):
+        Number of lowest natural frequencies to consider.
+
+    k_local_func (callable):
+        Function to compute the local stiffness matrix of an element.
+
+    m_local_func (callable):
+        Function to compute the local mass matrix of an element.
+
+    A_min (float):
+        Minimum allowable cross-sectional area.
+
+    A_max (float):
+        Maximum allowable cross-sectional area.
+
+    rotation_func (callable, optional):
+        Function to compute the rotation matrix for an element.
+
+**Returns:**
+
+    tuple: A tuple containing:
+        - `np.ndarray` or `None`: The optimized cross-sectional areas if a successful optimization is found within `max_trials`, otherwise `None`.
+        - `dict` or `None`: The hyperparameters (penalty weights) that led to a successful optimization, otherwise `None`.
+
+---
+
+### Function: `checkOptimization_frequencies_trusses(element_crossSections, optimized_area_values, forbidden_frequency_band, fem_nodes, fem_elements, mat_properties, ndof_per_node, bc_nodes, bc_dofs, assembleK, assembleM, k_local_func, m_local_func, rotation_func=None, num_modes=5, verbose=True)`
+
+Compares the natural frequencies of the truss structure before and after the cross-section optimization for frequency avoidance.
+
+**Function parameters:**
+
+    element_crossSections (list of dict):
+        List where each dictionary describes the original cross-section of an element. Must contain keys 'A' (area) and 'I' (second moment of inertia).
+
+    optimized_area_values (np.ndarray):
+        Array of optimized cross-sectional areas for each element.
+
+    forbidden_frequency_band (tuple):
+        Tuple $(f_{min}, f_{max})$ defining the frequency range that was forbidden during optimization.
+
+    fem_nodes (np.ndarray):
+        (N, 2) array of node coordinates.
+
+    fem_elements (np.ndarray):
+        (E, 2) array of element connectivity.
+
+    mat_properties (dict):
+        Dictionary of material properties (e.g., 'E' for Young's modulus, 'rho' for density).
+
+    ndof_per_node (int):
+        Number of degrees of freedom per node.
+
+    bc_nodes (np.ndarray):
+        Array of node indices with boundary conditions.
+
+    bc_dofs (np.ndarray):
+        Array of corresponding degrees of freedom for the boundary conditions.
+
+    assembleK (callable):
+        Function to assemble the global stiffness matrix.
+
+    assembleM (callable):
+        Function to assemble the global mass matrix.
+
+    k_local_func (callable):
+        Function to compute the local stiffness matrix of an element.
+
+    m_local_func (callable):
+        Function to compute the local mass matrix of an element.
+
+    rotation_func (callable, optional):
+        Function to compute the rotation matrix for an element (None for 1D). Defaults to None.
+
+    num_modes (int, optional):
+        Number of lowest natural frequencies to compute and compare (default = 5).
+
+    verbose (bool, optional):
+        If True, prints formatted output comparing original and optimized areas and frequencies (default = True).
+
+**Returns:**
+
+    None – if `verbose=True`, prints formatted tables to the console.
+
+---
+
+### Function: `optim_plot_1D_beam_geometry(fem_nodes, fem_elements, areas, section_shape="rectangle", color='skyblue', padding_factor=1.2, min_thickness=1e-2, figsize=(10, 6), show_labels=True)`
+
+Plot a visual representation of the 1D beam geometry, where the thickness or diameter of each element corresponds to its cross-sectional area.
+
+**Function parameters:**
+
+    fem_nodes (np.ndarray):
+        (N, 2) array of node coordinates.
+
+    fem_elements (list of tuple):
+        List of tuples, where each tuple $(node\_i, node\_j)$ defines an element's connectivity.
+
+    areas (list or np.ndarray):
+        List or array of cross-sectional areas for each element.
+
+    section_shape (str, optional):
+        Shape of the beam's cross-section. Can be "rectangle" or "circular" (default = "rectangle").
+
+    color (str, optional):
+        Color to fill the beam elements in the plot (default = 'skyblue').
+
+    padding_factor (float, optional):
+        Factor to increase the plot boundaries for better visualization (default = 1.2).
+
+    min_thickness (float, optional):
+        Minimum visual thickness/diameter for elements with very small areas, to prevent them from appearing as lines (default = 1e-2).
+
+    figsize (tuple, optional):
+        Size of the Matplotlib figure (width, height) in inches (default = (10, 6)).
+
+    show_labels (bool, optional):
+        If True, annotates each beam element with its calculated width (for rectangles) or diameter (for circles) (default = True).
+
+**Returns:**
+
+    None – displays a Matplotlib figure visualizing the beam geometry.
+
+---
+
+### Function: `optim_plot_truss_geometry(fem_nodes, fem_elements, areas, optim="stress", section_shape="rectangle", color='steelblue', min_thickness=0.5, scale_factor=1.0, show_labels=True, figsize=(10, 8), padding_factor=1.1)`
+
+Plot the geometry of a truss structure, where the linewidth of each element is scaled according to its cross-sectional area.
+
+**Function parameters:**
+
+    fem_nodes (np.ndarray):
+        Array of (x, y) coordinates for each node.
+
+    fem_elements (list of tuple):
+        List of tuples, where each tuple $(start\_node\_index, end\_node\_index)$ defines a truss element.
+
+    areas (list or np.ndarray):
+        List of cross-sectional areas corresponding to each element.
+
+    optim (str, optional):
+        Type of optimization performed ('stress' or other). Used in the plot title (default = "stress").
+
+    section_shape (str, optional):
+        Shape of the cross-section, either "rectangle" or "circular" (default = "rectangle"). This influences how the area is related to a visual dimension for labeling.
+
+    color (str, optional):
+        Color of the truss elements in the plot (default = 'steelblue').
+
+    min_thickness (float, optional):
+        Minimum linewidth for elements, ensuring they are visible even with very small areas (default = 0.5).
+
+    scale_factor (float, optional):
+        Scaling factor to adjust the visual thickness of the elements based on their area (default = 1.0).
+
+    show_labels (bool, optional):
+        If True, labels each element with a dimension (width for rectangle, diameter for circle) derived from its area (default = True).
+
+    figsize (tuple, optional):
+        Size of the Matplotlib figure (width, height) in inches (default = (10, 8)).
+
+    padding_factor (float, optional):
+        Factor to adjust the plot limits, adding extra space around the truss structure (default = 1.1).
+
+**Returns:**
+
+    None – displays a Matplotlib figure of the truss geometry.
+
+---
 

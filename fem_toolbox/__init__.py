@@ -13,6 +13,6 @@ from . import optimizer
 from pyfiglet import Figlet
 
 fig = Figlet(font='doom')
-print(fig.renderText('fem_toolbox'))
+print(fig.renderText('femtoolbox'))
 print("github.com/Gabbbri/fem_toolbox")
 
