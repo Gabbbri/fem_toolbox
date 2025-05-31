@@ -22,6 +22,7 @@
 - [Module 4: boundary conditions and external loads](#module-4-bc_loadspy-assigning-boundary-conditions-and-loads)
 - [Module 5: fea core tools](#module-5-femsolverpy-core-fem-functionality)
 - [Module 6: postprocessing](#module-6-postprocessingpy-post-processing-and-plotting)
+- [Module 7: optimization](#module-7-optimizerpy-weight-minimization-based-on-stress-or-frequency-constraints)
 
 ---
 
@@ -37,7 +38,7 @@ The choice of writing an implementation from scratch instead of using well-known
 
 It’s worth mentioning the open-source project *PyNite*, which stood out as one of the few user-friendly, accessible FEA packages that isn’t heavily math-abstracted (unlike FEniCS, for example). However, I ultimately chose to develop my own implementation rather than invest time in learning and adapting an existing codebase.
 
-That said, PyNite is a well-established project with support for 2D and 3D elements, P-Δ effects, and many other advanced features. For this reason, I anticipate eventually porting the shape optimization module developed here to the PyNite ecosystem, while leaving this package (fem_toolbox) primarily as a didactic exercise.
+That said, PyNite is a well-established project with support for 2D and 3D elements, P-Δ effects, and many other advanced features. For this reason, I anticipate *eventually* porting the shape optimization module developed here to the PyNite ecosystem, while leaving this package (fem_toolbox) primarily as a didactic exercise.
 
 
 
