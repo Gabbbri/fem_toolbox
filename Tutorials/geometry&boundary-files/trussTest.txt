@@ -1,0 +1,15 @@
+# UNITS: inches (example taken from a book to test the code)
+# Elasticity and density definition: E  rho  0  0  0  0
+# Beams definition: x1 y1 x2 y2 A I
+# Inertias are not relevant for trusses
+
+10e6 0.280  0   0   0   0
+0.0   0.0   40.0   0   1.5 3.99e4
+0 0 40 40 1.5 3.99e4
+40 40 0 40 1.5 3.99e4
+40 0 40 40 1.5 3.99e4
+40.0  0  80  0  1.5 3.99e4
+40 40 80 0 1.5 3.99e4
+80 40 40 40 1.5 3.99e4
+80 0 80 40 1.5 3.99e4
+
