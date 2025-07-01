@@ -8,4 +8,4 @@ The choice of writing an implementation from scratch instead of using well-known
 
 ---------------------------------------------
 
-INSTALLATION, GETTING STARTED etc: pick up the docs and start reading
+INSTALLATION, GETTING STARTED etc: everything is in the docs
